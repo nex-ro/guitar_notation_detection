@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Note & Chord Analyzer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Make sure Chart.js is loaded properly -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        body {
+            padding-top: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 900px;
+        }
+        .upload-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .results-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        #audioPlayer {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .note-badge {
+            background-color: #007bff;
+        }
+        .chord-badge {
+            background-color: #28a745;
+        }
+        .result-table {
+            height: 300px;
+            overflow-y: auto;
+        }
+        .info-alert {
+            margin-top: 15px;
+        }
+        .duration-info {
+            margin-top: 15px;
+            font-style: italic;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Audio Note & Chord Analyzer</h1>
+        
+        <div class="upload-container">
+            <h3>Upload Audio File</h3>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="audioFile" class="form-label">Select audio file (MP3, WAV, OGG)</label>
+                    <input class="form-control" type="file" id="audioFile" accept=".mp3,.wav,.ogg">
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="autoSegment">
+                        <label class="form-check-label" for="autoSegment">
+                            Deteksi segmen secara otomatis
+                        </label>
+                    </div>
+                    <div class="form-text">Jika diaktifkan, sistem akan mendeteksi onset suara secara otomatis</div>
+                </div>
+                
+                <div id="segmentDurationContainer" class="mb-3">
+                    <label for="segmentDuration" class="form-label">Durasi Segmen (detik)</label>
+                    <input type="number" class="form-control" id="segmentDuration" value="0.5" min="0.1" step="0.1">
+                    <div class="form-text">Setelan ini akan digunakan sebagai referensi saat segmentasi otomatis diaktifkan</div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Analyze</button>
+            </form>
+            
+            <div class="info-alert alert alert-info" role="alert">
+                File audio dengan durasi lebih dari 5 detik dapat diproses. Waktu pemrosesan akan lebih lama untuk file yang lebih besar.
+            </div>
+            
+            <div class="loading" id="loadingIndicator">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Processing audio... This may take a moment.</p>
+            </div>
+        </div>
+        
+        <div class="results-container" id="resultsContainer" style="display: none;">
+            <h3>Analysis Results</h3>
+            
+            <div class="mb-3">
+                <audio id="audioPlayer" controls></audio>
+                <div class="duration-info" id="audioDurationInfo"></div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="resultsChart"></canvas>
+            </div>
+            
+            <div class="d-flex mb-3">
+                <div class="me-3">
+                    <span class="badge note-badge">&nbsp;</span> Notes
+                </div>
+                <div>
+                    <span class="badge chord-badge">&nbsp;</span> Chords
+                </div>
+            </div>
+            
+            <div class="result-table">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Time (s)</th>
+                            <th>Type</th>
+                            <th>Label</th>
+                            <th>Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variable for chart
+        let resultsChart = null;
+        
+        // Toggle segment duration input based on auto segment checkbox
+        document.addEventListener('DOMContentLoaded', function() {
+            const autoSegmentCheckbox = document.getElementById('autoSegment');
+            const segmentDurationContainer = document.getElementById('segmentDurationContainer');
+            
+            autoSegmentCheckbox.addEventListener('change', function() {
+                segmentDurationContainer.style.opacity = this.checked ? '0.5' : '1';
+            });
+        });
+        
+        // Function to display results
+        function displayResults(results, audioFile, audioDuration) {
+            // Set up audio player
+            const audioPlayer = document.getElementById('audioPlayer');
+            audioPlayer.src = URL.createObjectURL(audioFile);
+            
+            // Display audio duration info
+            document.getElementById('audioDurationInfo').textContent = `Durasi Audio: ${audioDuration.toFixed(2)} detik`;
+            
+            // Prepare data for chart
+            const labels = results.map(r => r.time.toFixed(2));
+            const datasets = [{
+                label: 'Predictions',
+                data: results.map(r => {
+                    return {
+                        x: r.time,
+                        y: r.label,
+                        type: r.type
+                    };
+                }),
+                backgroundColor: results.map(r => r.type === 'note' ? '#007bff' : '#28a745'),
+                borderColor: results.map(r => r.type === 'note' ? '#0056b3' : '#1e7e34'),
+                borderWidth: 1,
+                pointRadius: 5
+            }];
+            
+            // Create or update chart
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            
+            if (resultsChart) {
+                resultsChart.destroy();
+            }
+            
+            resultsChart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Time (seconds)'
+                            },
+                            min: 0,
+                            max: Math.ceil(audioDuration)
+                        },
+                        y: {
+                            type: 'category',
+                            labels: [...new Set(results.map(r => r.label))].sort(),
+                            title: {
+                                display: true,
+                                text: 'Note/Chord'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const point = context.raw;
+                                    return `Time: ${point.x.toFixed(2)}s, ${point.type}: ${point.y}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Fill results table
+            const tableBody = document.getElementById('resultsTableBody');
+            tableBody.innerHTML = '';
+            
+            results.forEach(result => {
+                const row = document.createElement('tr');
+                
+                const timeCell = document.createElement('td');
+                timeCell.textContent = result.time.toFixed(2);
+                
+                const typeCell = document.createElement('td');
+                const typeBadge = document.createElement('span');
+                typeBadge.className = `badge ${result.type === 'note' ? 'note-badge' : 'chord-badge'}`;
+                typeBadge.textContent = result.type.charAt(0).toUpperCase() + result.type.slice(1);
+                typeCell.appendChild(typeBadge);
+                
+                const labelCell = document.createElement('td');
+                labelCell.textContent = result.label;
+                
+                const confidenceCell = document.createElement('td');
+                confidenceCell.textContent = (result.confidence * 100).toFixed(1) + '%';
+                
+                row.appendChild(timeCell);
+                row.appendChild(typeCell);
+                row.appendChild(labelCell);
+                row.appendChild(confidenceCell);
+                
+                tableBody.appendChild(row);
+            });
+            
+            // Show results container
+            document.getElementById('resultsContainer').style.display = 'block';
+        }
+        
+        // Function to show custom loading message based on file size
+        function showLoadingMessage(fileSize) {
+            const loadingText = document.querySelector('#loadingIndicator p');
+            
+            if (fileSize > 10 * 1024 * 1024) { // > 10MB
+                loadingText.textContent = "Processing large audio file... This may take several minutes.";
+            } else if (fileSize > 5 * 1024 * 1024) { // > 5MB
+                loadingText.textContent = "Processing audio file... This may take a minute or two.";
+            } else {
+                loadingText.textContent = "Processing audio... This may take a moment.";
+            }
+        }
+        
+        // Form submission handler
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const fileInput = document.getElementById('audioFile');
+                const segmentDuration = document.getElementById('segmentDuration').value;
+                const autoSegment = document.getElementById('autoSegment').checked;
+                
+                if (!fileInput.files.length) {
+                    alert('Please select an audio file');
+                    return;
+                }
+                
+                const file = fileInput.files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('segment_duration', segmentDuration);
+                formData.append('auto_segment', autoSegment);
+                
+                // Show loading indicator with customized message based on file size
+                showLoadingMessage(file.size);
+                document.getElementById('loadingIndicator').style.display = 'block';
+                document.getElementById('resultsContainer').style.display = 'none';
+                
+                try {
+                    const response = await fetch('/predict', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.detail || 'Error processing audio');
+                    }
+                    
+                    const data = await response.json();
+                    displayResults(data.results, file, data.audio_duration);
+                    
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                } finally {
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
