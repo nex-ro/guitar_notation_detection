@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, WebSocket
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
 import tensorflow as tf
@@ -26,7 +26,7 @@ chord_classes = ['Am', 'Bb', 'Bdim', 'C', 'Dm', 'Em', 'F', 'G',]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For development. In production, specify your frontend domain
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -107,13 +107,83 @@ def load_model():
     except Exception as e:
         print(f"❌ Failed to load model: {e}")
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/uploud", response_class=HTMLResponse)
 def read_root():
     with open("static/index.html", "r") as file:
         return file.read()
+    
+@app.get("/", response_class=HTMLResponse)
+def read_root():
+    with open("static/main.html", "r") as file:
+        return file.read()
+
+@app.get("/live", response_class=HTMLResponse)
+def live_detection():
+    """Render the live audio detection page"""
+    with open("static/live.html", "r") as file:
+        return file.read()
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for streaming audio data"""
+    await websocket.accept()
+    
+    try:
+        while True:
+            # Receive audio chunks from client
+            audio_data = await websocket.receive_bytes()
+            
+            # Convert to numpy array (assuming audio is sent as float32 values)
+            audio_np = np.frombuffer(audio_data, dtype=np.float32)
+            
+            # Create a single segment from the received audio chunk
+            segment = audio_np
+            target_length = int(0.5 * 44100)  # 0.5 seconds at 44.1kHz
+            
+            # Ensure consistent length by zero-padding short segments
+            if len(segment) < target_length:
+                segment = np.pad(segment, (0, target_length - len(segment)), 'constant')
+            elif len(segment) > target_length:
+                segment = segment[:target_length]
+            
+            # Convert to mel spectrogram
+            mel_spectrogram = librosa.feature.melspectrogram(y=segment, sr=44100)
+            mel_spectrogram = resize(np.expand_dims(mel_spectrogram, axis=-1), (128, 128))
+            
+            # Make prediction
+            prediction = model.predict(np.array([mel_spectrogram]), verbose=0)
+            predicted_label = np.argmax(prediction[0])
+            confidence = float(np.max(prediction[0]))
+            
+            # Determine class name and type
+            if predicted_label < len(note_classes):
+                class_name = note_classes[predicted_label]
+                class_type = "note"
+            else:
+                class_name = chord_classes[predicted_label - len(note_classes)]
+                class_type = "chord"
+            
+            # Send result back to client
+            result = {
+                "label": class_name,
+                "type": class_type,
+                "confidence": confidence
+            }
+            
+            await websocket.send_json(result)
+    
+    except Exception as e:
+        print(f"WebSocket error: {e}")
+    finally:
+        await websocket.close()
 
 @app.post("/predict")
-async def predict_audio(file: UploadFile = File(...), segment_duration: float = 0.5, auto_segment: bool = False):
+async def predict_audio(
+    file: UploadFile = File(...), 
+    segment_duration: float = 0.5, 
+    auto_segment: bool = False,
+    confidence_threshold: float = 0.2
+):
     if not file.filename.endswith(('.mp3', '.wav', '.ogg')):
         raise HTTPException(400, detail="Invalid audio format. Please upload MP3, WAV, or OGG file.")
     
@@ -146,26 +216,34 @@ async def predict_audio(file: UploadFile = File(...), segment_duration: float = 
         predicted_labels = np.argmax(predictions, axis=1)
         
         results = []
+        filtered_count = 0
         for i, label in enumerate(predicted_labels):
-            if label < len(note_classes):
-                class_name = note_classes[label]
-                class_type = "note"
-            else:
-                class_name = chord_classes[label - len(note_classes)]
-                class_type = "chord"
+            confidence = float(np.max(predictions[i]))
             
-            results.append({
-                "time": float(segment_times[i]),
-                "label": str(class_name),
-                "type": class_type,
-                "confidence": float(np.max(predictions[i]))
-            })
+            # Only include predictions that meet the confidence threshold
+            if confidence >= confidence_threshold:
+                if label < len(note_classes):
+                    class_name = note_classes[label]
+                    class_type = "note"
+                else:
+                    class_name = chord_classes[label - len(note_classes)]
+                    class_type = "chord"
+                
+                results.append({
+                    "time": float(segment_times[i]),
+                    "label": str(class_name),
+                    "type": class_type,
+                    "confidence": confidence
+                })
+            else:
+                filtered_count += 1
         
         # Clean up temp file
         os.unlink(temp_file_path)
         
         return JSONResponse(content={
             "results": results,
+            "filtered_count": filtered_count,
             "audio_duration": float(audio_duration)
         })
         

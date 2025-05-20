@@ -4,143 +4,165 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Audio Note & Chord Analyzer</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Make sure Chart.js is loaded properly -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         body {
-            padding-top: 20px;
-            background-color: #f8f9fa;
+            background-color: #111827; /* dark gray-900 */
+            color: #f3f4f6; /* gray-100 */
         }
-        .container {
-            max-width: 900px;
+        
+        header {
+            background-color: #111827; /* dark gray-900 */
+            border-bottom: 1px solid #1f2937; /* gray-800 */
         }
+        
         .upload-container {
-            background-color: white;
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+            background-color: #1f2937; /* gray-800 */
+            border: 1px solid #374151; /* gray-700 */
         }
+        
         .results-container {
-            background-color: white;
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background-color: #1f2937; /* gray-800 */
+            color: #f3f4f6; /* gray-100 */
         }
-        .chart-container {
-            position: relative;
-            height: 300px;
-            margin-bottom: 20px;
+        
+        .table-header {
+            background-color: #374151; /* gray-700 */
         }
-        .spinner-border {
-            width: 3rem;
-            height: 3rem;
+        
+        .table-row {
+            border-color: #4b5563; /* gray-600 */
         }
-        .loading {
-            display: none;
-            text-align: center;
-            margin: 20px 0;
+        
+        .highlight-accent {
+            color: #fbbf24; /* amber-400 */
         }
-        #audioPlayer {
-            width: 100%;
-            margin-bottom: 20px;
+        
+        .primary-button {
+            background-color: #fbbf24; /* amber-400 */
+            color: #1f2937; /* gray-800 */
         }
-        .note-badge {
-            background-color: #007bff;
+        
+        .primary-button:hover {
+            background-color: #f59e0b; /* amber-500 */
         }
-        .chord-badge {
-            background-color: #28a745;
+        
+        .secondary-button {
+            border-color: #fbbf24; /* amber-400 */
+            color: #fbbf24; /* amber-400 */
         }
-        .result-table {
-            height: 300px;
-            overflow-y: auto;
+        
+        .secondary-button:hover {
+            background-color: #fbbf24; /* amber-400 */
+            color: #1f2937; /* gray-800 */
         }
+        
         .info-alert {
-            margin-top: 15px;
-        }
-        .duration-info {
-            margin-top: 15px;
-            font-style: italic;
-            color: #6c757d;
+            background-color: #1e3a8a; /* blue-900 */
+            border-color: #3b82f6; /* blue-500 */
+            color: #bfdbfe; /* blue-200 */
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="text-center mb-4">Audio Note & Chord Analyzer</h1>
+     
+    <header class="px-6 py-4 flex justify-between items-center">
+        <!-- Logo dan Judul -->
+        <div class="flex items-center space-x-2">
+          <a href="/" class="flex items-center space-x-2">
+            <img src="/static/logo_gitar.png" alt="Logo" class="h-8 w-8" />
+            <span class="text-lg font-medium font-bold">
+              Nada <span class="highlight-accent">Gitar</span>
+            </span>
+          </a>
+        </div>
+    
+        <!-- Navigasi -->
+        <nav class="flex space-x-6">
+            <a href="/" class="hover:text-amber-400 hover:underline transition duration-200 ease-in-out px-2 py-1 rounded">Home</a>
+            <a href="/uploud" class="text-amber-400 hover:text-amber-300 hover:underline transition duration-200 ease-in-out px-2 py-1 rounded">Uploud Suara</a>
+            <a href="/live" class="hover:text-amber-400 hover:underline transition duration-200 ease-in-out px-2 py-1 rounded">Periksa Nada live</a>
+        </nav>
+    </header>
+
+    <div class="max-w-screen-lg mx-auto mt-4 px-4">
+        <h1 class="text-center mb-4 text-3xl font-bold">Audio Note & Chord <span class="highlight-accent">Analyzer</span></h1>
         
-        <div class="upload-container">
-            <h3>Upload Audio File</h3>
+        <div class="upload-container rounded-lg p-6 shadow-md mb-6">
+            <h3 class="mb-4 text-xl font-semibold">Upload Audio File</h3>
             <form id="uploadForm" enctype="multipart/form-data">
-                <div class="mb-3">
-                    <label for="audioFile" class="form-label">Select audio file (MP3, WAV, OGG)</label>
-                    <input class="form-control" type="file" id="audioFile" accept=".mp3,.wav,.ogg">
-                </div>
-                
-                <div class="mb-3">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="autoSegment">
-                        <label class="form-check-label" for="autoSegment">
-                            Deteksi segmen secara otomatis
-                        </label>
+                <div class="mb-4 relative">
+                    <div id="dropArea" class="border-2 border-dashed border-gray-600 rounded-lg py-16 px-6 text-center cursor-pointer transition duration-300 bg-gray-700 hover:border-amber-400 hover:bg-gray-600">
+                        <div class="text-gray-400 mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-16 w-16" fill="currentColor" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M7.646 5.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708l2-2z"/>
+                                <path d="M4.406 3.342A5.53 5.53 0 0 1 8 2c2.69 0 4.923 2 5.166 4.579C14.758 6.804 16 8.137 16 9.773 16 11.569 14.502 13 12.687 13H3.781C1.708 13 0 11.366 0 9.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383zm.653.757c-.757.653-1.153 1.44-1.153 2.056v.448l-.445.049C2.064 6.805 1 7.952 1 9.318 1 10.785 2.23 12 3.781 12h8.906C13.98 12 15 10.988 15 9.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 4.825 10.328 3 8 3a4.53 4.53 0 0 0-2.941 1.1z"/>
+                            </svg>
+                        </div>
+                        <div class="text-gray-300">
+                            <h5 class="text-lg font-medium">Drag & Drop files here</h5>
+                            <p class="my-2">or</p>
+                             <button type="button" class="secondary-button px-4 py-2 border rounded-md transition duration-300">Browse Files</button>
+                        </div>
+                        <input class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" type="file" id="audioFile" accept=".mp3,.wav,.ogg">
+                        <div id="fileNameDisplay" class="mt-4 font-semibold text-amber-400 hidden"></div>
                     </div>
-                    <div class="form-text">Jika diaktifkan, sistem akan mendeteksi onset suara secara otomatis</div>
                 </div>
                 
-                <div id="segmentDurationContainer" class="mb-3">
-                    <label for="segmentDuration" class="form-label">Durasi Segmen (detik)</label>
-                    <input type="number" class="form-control" id="segmentDuration" value="0.5" min="0.1" step="0.1">
-                    <div class="form-text">Setelan ini akan digunakan sebagai referensi saat segmentasi otomatis diaktifkan</div>
-                </div>
+                <!-- Hidden fields - automatic segment detection is always enabled -->
+                <input type="hidden" id="autoSegment" value="true">
+                <input type="hidden" id="segmentDuration" value="0.5">
                 
-                <button type="submit" class="btn btn-primary">Analyze</button>
+                <div class="text-center">
+                    <button type="submit" class="primary-button font-semibold py-2 px-6 rounded-md transition duration-300 transform hover:-translate-y-0.5">Analyze</button>
+                </div>
             </form>
             
-            <div class="info-alert alert alert-info" role="alert">
+            <div class="mt-4 info-alert border-l-4 p-4 rounded" role="alert">
                 File audio dengan durasi lebih dari 5 detik dapat diproses. Waktu pemrosesan akan lebih lama untuk file yang lebih besar.
             </div>
             
-            <div class="loading" id="loadingIndicator">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2">Processing audio... This may take a moment.</p>
+            <div id="loadingIndicator" class="hidden text-center my-6">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-amber-500 border-t-transparent"></div>
+                <p class="mt-3 text-gray-300">Processing audio... This may take a moment.</p>
             </div>
         </div>
         
-        <div class="results-container" id="resultsContainer" style="display: none;">
-            <h3>Analysis Results</h3>
+        <div id="resultsContainer" class="results-container rounded-lg p-6 shadow-md hidden" style="margin-bottom: 20px;">
+            <h3 class="text-xl font-semibold mb-4">Analysis Results</h3>
             
-            <div class="mb-3">
-                <audio id="audioPlayer" controls></audio>
-                <div class="duration-info" id="audioDurationInfo"></div>
+            <div class="mb-6">
+                <audio id="audioPlayer" class="w-full mb-2" controls></audio>
+                <div id="audioDurationInfo" class="text-gray-400 italic"></div>
             </div>
             
-            <div class="chart-container">
+            <div class="relative h-72 mb-6">
                 <canvas id="resultsChart"></canvas>
             </div>
             
-            <div class="d-flex mb-3">
-                <div class="me-3">
-                    <span class="badge note-badge">&nbsp;</span> Notes
+            <div class="flex mb-4 space-x-4">
+                <div class="flex items-center">
+                    <span class="inline-block w-4 h-4 bg-blue-600 rounded mr-2"></span> 
+                    <span>Notes</span>
                 </div>
-                <div>
-                    <span class="badge chord-badge">&nbsp;</span> Chords
+                <div class="flex items-center">
+                    <span class="inline-block w-4 h-4 bg-green-600 rounded mr-2"></span> 
+                    <span>Chords</span>
                 </div>
             </div>
             
-            <div class="result-table">
-                <table class="table table-striped">
-                    <thead>
+            <div class="h-72 overflow-y-auto">
+                <table class="min-w-full divide-y divide-gray-600">
+                    <thead class="table-header">
                         <tr>
-                            <th>Time (s)</th>
-                            <th>Type</th>
-                            <th>Label</th>
-                            <th>Confidence</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Time (s)</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Label</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Confidence</th>
                         </tr>
                     </thead>
-                    <tbody id="resultsTableBody">
+                    <tbody id="resultsTableBody" class="divide-y divide-gray-600">
                     </tbody>
                 </table>
             </div>
@@ -151,17 +173,75 @@
         // Global variable for chart
         let resultsChart = null;
         
-        // Toggle segment duration input based on auto segment checkbox
+        // Handle drag and drop file upload
         document.addEventListener('DOMContentLoaded', function() {
-            const autoSegmentCheckbox = document.getElementById('autoSegment');
-            const segmentDurationContainer = document.getElementById('segmentDurationContainer');
+            const dropArea = document.getElementById('dropArea');
+            const fileInput = document.getElementById('audioFile');
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
             
-            autoSegmentCheckbox.addEventListener('change', function() {
-                segmentDurationContainer.style.opacity = this.checked ? '0.5' : '1';
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            // Highlight drop area when item is dragged over it
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropArea.classList.add('bg-gray-600');
+                dropArea.classList.add('border-amber-400');
+                dropArea.classList.remove('border-gray-600');
+            }
+            
+            function unhighlight() {
+                dropArea.classList.remove('bg-gray-600');
+                dropArea.classList.remove('border-amber-400');
+                dropArea.classList.add('border-gray-600');
+            }
+            
+            // Handle dropped files
+            dropArea.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length) {
+                    fileInput.files = files;
+                    updateFileNameDisplay(files[0].name);
+                }
+            }
+            
+            // Handle file input change
+            fileInput.addEventListener('change', function() {
+                if (this.files.length) {
+                    updateFileNameDisplay(this.files[0].name);
+                }
+            });
+            
+            function updateFileNameDisplay(fileName) {
+                fileNameDisplay.textContent = 'Selected file: ' + fileName;
+                fileNameDisplay.classList.remove('hidden');
+            }
+            
+            // Make the button click trigger the file input
+            dropArea.querySelector('button').addEventListener('click', function(e) {
+                e.preventDefault();
+                fileInput.click();
             });
         });
-        
-        // Function to display results
+
         function displayResults(results, audioFile, audioDuration) {
             // Set up audio player
             const audioPlayer = document.getElementById('audioPlayer');
@@ -181,8 +261,8 @@
                         type: r.type
                     };
                 }),
-                backgroundColor: results.map(r => r.type === 'note' ? '#007bff' : '#28a745'),
-                borderColor: results.map(r => r.type === 'note' ? '#0056b3' : '#1e7e34'),
+                backgroundColor: results.map(r => r.type === 'note' ? '#f59e0b' : '#10b981'), // amber-500 and emerald-500
+                borderColor: results.map(r => r.type === 'note' ? '#d97706' : '#059669'), // amber-600 and emerald-600
                 borderWidth: 1,
                 pointRadius: 5
             }];
@@ -193,6 +273,10 @@
             if (resultsChart) {
                 resultsChart.destroy();
             }
+            
+            // Set Chart.js default styles for dark theme
+            Chart.defaults.color = '#e5e7eb'; // gray-200
+            Chart.defaults.borderColor = '#4b5563'; // gray-600
             
             resultsChart = new Chart(ctx, {
                 type: 'scatter',
@@ -208,28 +292,50 @@
                             position: 'bottom',
                             title: {
                                 display: true,
-                                text: 'Time (seconds)'
+                                text: 'Time (seconds)',
+                                color: '#e5e7eb' // gray-200
                             },
                             min: 0,
-                            max: Math.ceil(audioDuration)
+                            max: Math.ceil(audioDuration),
+                            grid: {
+                                color: '#374151' // gray-700
+                            },
+                            ticks: {
+                                color: '#d1d5db' // gray-300
+                            }
                         },
                         y: {
                             type: 'category',
                             labels: [...new Set(results.map(r => r.label))].sort(),
                             title: {
                                 display: true,
-                                text: 'Note/Chord'
+                                text: 'Note/Chord',
+                                color: '#e5e7eb' // gray-200
+                            },
+                            grid: {
+                                color: '#374151' // gray-700
+                            },
+                            ticks: {
+                                color: '#d1d5db' // gray-300
                             }
                         }
                     },
                     plugins: {
                         tooltip: {
+                            backgroundColor: '#1f2937', // gray-800
+                            titleColor: '#f3f4f6', // gray-100
+                            bodyColor: '#f3f4f6', // gray-100
+                            borderColor: '#4b5563', // gray-600
+                            borderWidth: 1,
                             callbacks: {
                                 label: function(context) {
                                     const point = context.raw;
                                     return `Time: ${point.x.toFixed(2)}s, ${point.type}: ${point.y}`;
                                 }
                             }
+                        },
+                        legend: {
+                            display: false
                         }
                     }
                 }
@@ -241,20 +347,25 @@
             
             results.forEach(result => {
                 const row = document.createElement('tr');
+                row.className = 'table-row';
                 
                 const timeCell = document.createElement('td');
+                timeCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-300';
                 timeCell.textContent = result.time.toFixed(2);
                 
                 const typeCell = document.createElement('td');
+                typeCell.className = 'px-6 py-4 whitespace-nowrap text-sm';
                 const typeBadge = document.createElement('span');
-                typeBadge.className = `badge ${result.type === 'note' ? 'note-badge' : 'chord-badge'}`;
+                typeBadge.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${result.type === 'note' ? 'bg-amber-900 text-amber-200' : 'bg-emerald-900 text-emerald-200'}`;
                 typeBadge.textContent = result.type.charAt(0).toUpperCase() + result.type.slice(1);
                 typeCell.appendChild(typeBadge);
                 
                 const labelCell = document.createElement('td');
+                labelCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-300';
                 labelCell.textContent = result.label;
                 
                 const confidenceCell = document.createElement('td');
+                confidenceCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-300';
                 confidenceCell.textContent = (result.confidence * 100).toFixed(1) + '%';
                 
                 row.appendChild(timeCell);
@@ -266,7 +377,7 @@
             });
             
             // Show results container
-            document.getElementById('resultsContainer').style.display = 'block';
+            document.getElementById('resultsContainer').classList.remove('hidden');
         }
         
         // Function to show custom loading message based on file size
@@ -288,8 +399,9 @@
                 e.preventDefault();
                 
                 const fileInput = document.getElementById('audioFile');
+                // Always use auto segmentation with fixed segment duration
                 const segmentDuration = document.getElementById('segmentDuration').value;
-                const autoSegment = document.getElementById('autoSegment').checked;
+                const autoSegment = true;
                 
                 if (!fileInput.files.length) {
                     alert('Please select an audio file');
@@ -304,8 +416,8 @@
                 
                 // Show loading indicator with customized message based on file size
                 showLoadingMessage(file.size);
-                document.getElementById('loadingIndicator').style.display = 'block';
-                document.getElementById('resultsContainer').style.display = 'none';
+                document.getElementById('loadingIndicator').classList.remove('hidden');
+                document.getElementById('resultsContainer').classList.add('hidden');
                 
                 try {
                     const response = await fetch('/predict', {
@@ -324,7 +436,7 @@
                 } catch (error) {
                     alert('Error: ' + error.message);
                 } finally {
-                    document.getElementById('loadingIndicator').style.display = 'none';
+                    document.getElementById('loadingIndicator').classList.add('hidden');
                 }
             });
         });

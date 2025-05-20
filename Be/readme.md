@@ -13,7 +13,7 @@ pip install "uvicorn[standard]"
 pip install tensorflow
 pip install librosa
 pip install scikit-image
-
+pip install python-multipart
 
 run :
 $ python -m uvicorn app:app --reload
