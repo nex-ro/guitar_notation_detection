@@ -4,14 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nada Gitar - Check nada Audio</title>
-    <link rel="icon" type="image/png" href="/static/logo_gitar.png">    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/static/logo_gitar.png">    
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
     <style>
         body {
             background-color: #111827; /* dark gray-900 */
             color: #f3f4f6; /* gray-100 */
         }
         
+
+        .amber {
+          background-color: #f59e0b; /* amber-500 */
+        }
+
+        .emerald {
+          background-color: #10b981; /* emerald-500 */
+        }
+        .bg-amber-900 {
+  background-color: #78350f; /* amber-900 */
+}
+
+.text-amber-200 {
+  color: #fcd34d; /* amber-200 */
+}
+
+.bg-emerald-900 {
+  background-color: #064e3b; /* emerald-900 */
+}
+
+.text-emerald-200 {
+  color: #a7f3d0; /* emerald-200 */
+}
+
         header {
             background-color: #111827; /* dark gray-900 */
             border-bottom: 1px solid #1f2937; /* gray-800 */
@@ -43,6 +72,20 @@
             background-color: #fbbf24; /* amber-400 */
             color: #1f2937; /* gray-800 */
         }
+        #vf-notation {
+    background-color: #fff;
+    border-radius: 4px;
+    padding: 10px 0;
+    min-height: 150px;
+    overflow-y: auto;
+    max-height: 500px; /* Limit maximum height and enable scrolling */
+}
+    
+    /* Styling untuk elemen notasi VexFlow */
+    #vf-notation .vf-note:hover {
+        opacity: 0.8;
+    }
+
         
         .primary-button:hover {
             background-color: #f59e0b; /* amber-500 */
@@ -147,14 +190,18 @@
             <div class="relative h-72 mb-6">
                 <canvas id="resultsChart"></canvas>
             </div>
+            <div id="music-notation" class="mb-6 p-4 bg-gray-800 rounded-lg overflow-x-auto">
+                <h4 class="text-lg font-semibold mb-3">Notasi Musik</h4>
+                <div id="vf-notation" class="w-full h-48 flex justify-center"></div>
+            </div>
             
             <div class="flex mb-4 space-x-4">
                 <div class="flex items-center">
-                    <span class="inline-block w-4 h-4 bg-amber-500 rounded mr-2"></span> 
+                    <span class="amber inline-block w-4 h-4 bg-amber-500 rounded mr-2"></span> 
                     <span>Notes</span>
                 </div>
                 <div class="flex items-center">
-                    <span class="inline-block w-4 h-4 bg-emerald-500 rounded mr-2"></span> 
+                    <span class="emerald inline-block w-4 h-4 bg-emerald-500 rounded mr-2"></span> 
                     <span>Chords</span>
                 </div>
             </div>
@@ -224,11 +271,12 @@
                   </a>
                 </div>
               </div>
+              
             </div>
           </div>
           
           <div class="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p class="text-gray-500">© 2025 Nada Gitar Akustik. Seluruh hak cipta dilindungi.</p>
+            <p class="text-gray-500">Nexroo© 2025 Nada Gitar Akustik. Seluruh hak cipta dilindungi.</p>
             <div class="flex space-x-6 mt-4 md:mt-0">
               <a href="#" class="text-gray-500 hover:text-yellow-400 transition duration-300">Kebijakan Privasi</a>
               <a href="#" class="text-gray-500 hover:text-yellow-400 transition duration-300">Syarat dan Ketentuan</a>
@@ -236,6 +284,9 @@
           </div>
         </div>
       </footer>
+
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/vexflow/4.2.2/vexflow.min.js"></script>
+    <script src="https://unpkg.com/vexflow/releases/vexflow-debug.js"></script>
     <script>
         // Global variable for chart
         let resultsChart = null;
@@ -309,143 +360,399 @@
             });
         });
 
+        function convertNoteToVexFlow(noteLabel) {
+        // Contoh: 'C4' tetap 'C/4', 'Asharp3' menjadi 'A#/3'
+        let note = noteLabel.replace('sharp', '#');
+        
+        // Pisahkan nama nada dan oktaf
+        let noteName = note.match(/[A-G]#?/)[0];
+        let octave = note.match(/\d+/)[0];
+        
+        return `${noteName}/${octave}`;
+    }
+    function convertChordToVexFlow(chordLabel) {
+        // Mapping sederhana untuk chord dasar
+        const chordNotes = {
+            'Am': ['A/3', 'C/4', 'E/4'],
+            'Bb': ['Bb/3', 'D/4', 'F/4'],
+            'Bdim': ['B/3', 'D/4', 'F/4'],
+            'C': ['C/4', 'E/4', 'G/4'],
+            'Dm': ['D/4', 'F/4', 'A/4'],
+            'Em': ['E/3', 'G/3', 'B/3'],
+            'F': ['F/3', 'A/3', 'C/4'],
+            'G': ['G/3', 'B/3', 'D/4']
+        };
+        
+        return chordNotes[chordLabel] || [`${chordLabel}/4`];
+    }
+
+    function createMusicNotation(results) {
+    // Clear notation area
+    const container = document.getElementById('vf-notation');
+    container.innerHTML = '';
+    
+    // Add a message if no results
+    if (!results || results.length === 0) {
+        container.innerHTML = '<p style="color: black; padding: 20px;">No musical notation to display</p>';
+        return;
+    }
+    
+    // Check if VexFlow is properly loaded
+    if (typeof Vex === 'undefined' || !Vex.Flow) {
+        console.error('VexFlow library not loaded correctly');
+        container.innerHTML = '<p style="color: black; padding: 20px;">Unable to display notation: VexFlow not loaded</p>';
+        return;
+    }
+    
+    try {
+        // Configuration
+        const NOTES_PER_LINE = 12; // Notes per stave line - adjusted for better readability
+        const LINE_HEIGHT = 120; // Height for each line
+        const STAVE_WIDTH = 800; // Width of stave
+        
+        // Use all results
+        const itemsToShow = results;
+        
+        // Calculate how many lines we need for all notes
+        const numLines = Math.ceil(itemsToShow.length / NOTES_PER_LINE);
+        const totalHeight = numLines * LINE_HEIGHT;
+        
+        // First, update container style for scrolling
+        container.style.height = 'auto';
+        container.style.maxHeight = '600px'; // Increase max height
+        container.style.overflowY = 'auto';
+        container.style.overflowX = 'hidden';
+        container.style.padding = '10px';
+        
+        // Create a wrapper div for the SVG
+        const wrapperDiv = document.createElement('div');
+        wrapperDiv.style.height = totalHeight + 50 + 'px'; // Add extra padding
+        wrapperDiv.style.width = STAVE_WIDTH + 50 + 'px';
+        container.appendChild(wrapperDiv);
+        
+        // Create renderer
+        const renderer = new Vex.Flow.Renderer(
+            wrapperDiv,
+            Vex.Flow.Renderer.Backends.SVG
+        );
+        
+        // Configure renderer
+        renderer.resize(STAVE_WIDTH + 50, totalHeight + 50);
+        const context = renderer.getContext();
+        context.setFont('Arial', 10);
+        
+        // Process items in groups by line
+        for (let lineIndex = 0; lineIndex < numLines; lineIndex++) {
+            // Calculate start and end indices for this line
+            const startIdx = lineIndex * NOTES_PER_LINE;
+            const endIdx = Math.min(startIdx + NOTES_PER_LINE, itemsToShow.length);
+            const lineItems = itemsToShow.slice(startIdx, endIdx);
+            
+            // Calculate y position for this line
+            const yPosition = lineIndex * LINE_HEIGHT;
+            
+            // Create stave for this line
+            const stave = new Vex.Flow.Stave(10, yPosition, STAVE_WIDTH);
+            
+            // Only add clef to the first line
+            if (lineIndex === 0) {
+                stave.addClef('treble');
+            }
+            
+            stave.setContext(context).draw();
+            
+            // Create note objects for this line
+            const staveNotes = [];
+            
+            // Create notes from results
+            lineItems.forEach(result => {
+                let note;
+                
+                if (result.type === 'note') {
+                    // Convert note format (e.g., C4 -> C/4)
+                    try {
+                        const pitch = result.label.replace(/([A-G](?:sharp|flat)?)(\d+)/, '$1/$2');
+                        note = new Vex.Flow.StaveNote({
+                            keys: [pitch.replace('sharp', '#').replace('flat', 'b')],
+                            duration: 'q'
+                        });
+                        
+                        // Add accidentals if needed
+                        if (pitch.includes('sharp')) {
+                            note.addAccidental(0, new Vex.Flow.Accidental('#'));
+                        } else if (pitch.includes('flat')) {
+                            note.addAccidental(0, new Vex.Flow.Accidental('b'));
+                        }
+                    } catch (e) {
+                        console.error('Error creating note:', e);
+                        note = new Vex.Flow.StaveNote({
+                            keys: ['C/4'],
+                            duration: 'q'
+                        });
+                    }
+                } else if (result.type === 'chord') {
+                    // Comprehensive chord mapping
+                    let keys;
+                    let accidentals = [];
+                    
+                    switch (result.label) {
+                        // Major chords
+                        case 'C':  keys = ['C/4', 'E/4', 'G/4']; break;
+                        case 'G':  keys = ['G/3', 'B/3', 'D/4']; break;
+                        case 'D':  keys = ['D/4', 'F#/4', 'A/4']; accidentals = [null, '#', null]; break;
+                        case 'A':  keys = ['A/3', 'C#/4', 'E/4']; accidentals = [null, '#', null]; break;
+                        case 'E':  keys = ['E/3', 'G#/3', 'B/3']; accidentals = [null, '#', null]; break;
+                        case 'B':  keys = ['B/3', 'D#/4', 'F#/4']; accidentals = [null, '#', '#']; break;
+                        case 'F':  keys = ['F/3', 'A/3', 'C/4']; break;
+                        case 'Bb': keys = ['Bb/3', 'D/4', 'F/4']; accidentals = ['b', null, null]; break;
+                        case 'Eb': keys = ['Eb/3', 'G/3', 'Bb/3']; accidentals = ['b', null, 'b']; break;
+                        
+                        // Minor chords
+                        case 'Am':  keys = ['A/3', 'C/4', 'E/4']; break;
+                        case 'Em':  keys = ['E/3', 'G/3', 'B/3']; break;
+                        case 'Dm':  keys = ['D/4', 'F/4', 'A/4']; break;
+                        case 'Bm':  keys = ['B/3', 'D/4', 'F#/4']; accidentals = [null, null, '#']; break;
+                        case 'F#m': keys = ['F#/3', 'A/3', 'C#/4']; accidentals = ['#', null, '#']; break;
+                        case 'Gm':  keys = ['G/3', 'Bb/3', 'D/4']; accidentals = [null, 'b', null]; break;
+                        case 'Cm':  keys = ['C/4', 'Eb/4', 'G/4']; accidentals = [null, 'b', null]; break;
+                        
+                        // 7th chords
+                        case 'C7':  keys = ['C/4', 'E/4', 'G/4', 'Bb/4']; accidentals = [null, null, null, 'b']; break;
+                        case 'G7':  keys = ['G/3', 'B/3', 'D/4', 'F/4']; break;
+                        case 'D7':  keys = ['D/4', 'F#/4', 'A/4', 'C/5']; accidentals = [null, '#', null, null]; break;
+                        case 'A7':  keys = ['A/3', 'C#/4', 'E/4', 'G/4']; accidentals = [null, '#', null, null]; break;
+                        
+                        // Default fallback chord (C major)
+                        default:
+                            console.log('Unknown chord:', result.label);
+                            keys = ['C/4', 'E/4', 'G/4'];
+                    }
+                    
+                    note = new Vex.Flow.StaveNote({
+                        keys: keys,
+                        duration: 'q'
+                    });
+                    
+                    // Add accidentals if specified
+                    if (accidentals.length > 0) {
+                        accidentals.forEach((acc, i) => {
+                            if (acc) {
+                                note.addAccidental(i, new Vex.Flow.Accidental(acc));
+                            }
+                        });
+                    }
+                }
+                
+                if (note) {
+                    staveNotes.push(note);
+                }
+            });
+            
+            // Add at least one note if empty
+            if (staveNotes.length === 0) {
+                staveNotes.push(new Vex.Flow.StaveNote({
+                    keys: ['C/4'],
+                    duration: 'q'
+                }));
+            }
+            
+            // Create a voice
+            const voice = new Vex.Flow.Voice({
+                num_beats: staveNotes.length,
+                beat_value: 4,
+                resolution: Vex.Flow.RESOLUTION
+            }).setMode(Vex.Flow.Voice.Mode.SOFT);
+            
+            // Add notes to the voice
+            voice.addTickables(staveNotes);
+            
+            // Format and justify the notes within available width
+            new Vex.Flow.Formatter()
+                .joinVoices([voice])
+                .format([voice], STAVE_WIDTH - 50);
+            
+            // Render the voice
+            voice.draw(context, stave);
+            
+            // Add time information below notes
+            lineItems.forEach((result, idx) => {
+                const note = staveNotes[idx];
+                const noteX = note.getAbsoluteX();
+                const timeText = result.time.toFixed(1) + 's';
+                
+                // Draw time labels
+                context.save();
+                context.setFont('Arial', 8);
+                context.fillStyle = 'black';
+                
+                context.fillText(`${result.label} `, noteX, yPosition + stave.getHeight() + 35);
+                
+                context.restore();
+            });
+            
+            // Add line number for reference
+            context.save();
+            context.setFont('Arial', 10);
+            context.fillStyle = 'gray';
+            context.fillText(`Line ${lineIndex + 1}/${numLines}`, STAVE_WIDTH - 80, yPosition + 20);
+            context.restore();
+        }
+        
+        // Add a note at the top about scrolling
+        context.save();
+        context.setFont('Arial', 12);
+        context.fillStyle = 'black';
+        context.fillText(`Showing all ${results.length} detected notes/chords. Scroll down to view all.`, 10, totalHeight + 30);
+        context.restore();
+        
+    } catch (error) {
+        console.error('Error creating music notation:', error);
+        container.innerHTML = '<p style="color: black; padding: 20px;">Error creating notation: ' + error.message + '</p>';
+    }
+}
+
         function displayResults(results, audioFile, audioDuration) {
             // Set up audio player
             const audioPlayer = document.getElementById('audioPlayer');
             audioPlayer.src = URL.createObjectURL(audioFile);
-            
-            // Display audio duration info
-            document.getElementById('audioDurationInfo').textContent = `Durasi Audio: ${audioDuration.toFixed(2)} detik`;
-            
+                        
             // Prepare data for chart
-            const labels = results.map(r => r.time.toFixed(2));
-            const datasets = [{
-                label: 'Predictions',
-                data: results.map(r => {
-                    return {
-                        x: r.time,
-                        y: r.label,
-                        type: r.type
-                    };
-                }),
-                backgroundColor: results.map(r => r.type === 'note' ? '#f59e0b' : '#10b981'), // amber-500 and emerald-500
-                borderColor: results.map(r => r.type === 'note' ? '#d97706' : '#059669'), // amber-600 and emerald-600
-                borderWidth: 1,
-                pointRadius: 5
-            }];
-            
-            // Create or update chart
-            const ctx = document.getElementById('resultsChart').getContext('2d');
-            
-            if (resultsChart) {
-                resultsChart.destroy();
-            }
-            
-            // Set Chart.js default styles for dark theme
-            Chart.defaults.color = '#e5e7eb'; // gray-200
-            Chart.defaults.borderColor = '#4b5563'; // gray-600
-            
-            resultsChart = new Chart(ctx, {
-                type: 'scatter',
-                data: {
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            type: 'linear',
-                            position: 'bottom',
-                            title: {
-                                display: true,
-                                text: 'Time (seconds)',
-                                color: '#e5e7eb' // gray-200
-                            },
-                            min: 0,
-                            max: Math.ceil(audioDuration),
-                            grid: {
-                                color: '#374151' // gray-700
-                            },
-                            ticks: {
-                                color: '#d1d5db' // gray-300
-                            }
+            document.getElementById('audioDurationInfo').textContent = `Durasi Audio: ${audioDuration.toFixed(2)} detik`;
+        
+        // Prepare data for chart
+        const labels = results.map(r => r.time.toFixed(2));
+        const datasets = [{
+            label: 'Predictions',
+            data: results.map(r => {
+                return {
+                    x: r.time,
+                    y: r.label,
+                    type: r.type
+                };
+            }),
+            backgroundColor: results.map(r => r.type === 'note' ? '#f59e0b' : '#10b981'), // amber-500 and emerald-500
+            borderColor: results.map(r => r.type === 'note' ? '#d97706' : '#059669'), // amber-600 and emerald-600
+            borderWidth: 1,
+            pointRadius: 5
+        }];
+        
+        // Create or update chart
+        const ctx = document.getElementById('resultsChart').getContext('2d');
+        
+        if (resultsChart) {
+            resultsChart.destroy();
+        }
+        
+        // Set Chart.js default styles for dark theme
+        Chart.defaults.color = '#e5e7eb'; // gray-200
+        Chart.defaults.borderColor = '#4b5563'; // gray-600
+        
+        resultsChart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: 'Time (seconds)',
+                            color: '#e5e7eb' // gray-200
                         },
-                        y: {
-                            type: 'category',
-                            labels: [...new Set(results.map(r => r.label))].sort(),
-                            title: {
-                                display: true,
-                                text: 'Note/Chord',
-                                color: '#e5e7eb' // gray-200
-                            },
-                            grid: {
-                                color: '#374151' // gray-700
-                            },
-                            ticks: {
-                                color: '#d1d5db' // gray-300
+                        min: 0,
+                        max: Math.ceil(audioDuration),
+                        grid: {
+                            color: '#374151' // gray-700
+                        },
+                        ticks: {
+                            color: '#d1d5db' // gray-300
+                        }
+                    },
+                    y: {
+                        type: 'category',
+                        labels: [...new Set(results.map(r => r.label))].sort(),
+                        title: {
+                            display: true,
+                            text: 'Note/Chord',
+                            color: '#e5e7eb' // gray-200
+                        },
+                        grid: {
+                            color: '#374151' // gray-700
+                        },
+                        ticks: {
+                            color: '#d1d5db' // gray-300
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        backgroundColor: '#1f2937', // gray-800
+                        titleColor: '#f3f4f6', // gray-100
+                        bodyColor: '#f3f4f6', // gray-100
+                        borderColor: '#4b5563', // gray-600
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                const point = context.raw;
+                                return `Time: ${point.x.toFixed(2)}s, ${point.type}: ${point.y}`;
                             }
                         }
                     },
-                    plugins: {
-                        tooltip: {
-                            backgroundColor: '#1f2937', // gray-800
-                            titleColor: '#f3f4f6', // gray-100
-                            bodyColor: '#f3f4f6', // gray-100
-                            borderColor: '#4b5563', // gray-600
-                            borderWidth: 1,
-                            callbacks: {
-                                label: function(context) {
-                                    const point = context.raw;
-                                    return `Time: ${point.x.toFixed(2)}s, ${point.type}: ${point.y}`;
-                                }
-                            }
-                        },
-                        legend: {
-                            display: false
-                        }
+                    legend: {
+                        display: false
                     }
                 }
-            });
+            }
+        });
+
             
             // Fill results table
             const tableBody = document.getElementById('resultsTableBody');
-            tableBody.innerHTML = '';
+        tableBody.innerHTML = '';
+        
+        results.forEach(result => {
+            const row = document.createElement('tr');
+            row.className = 'table-row';
             
-            results.forEach(result => {
-                const row = document.createElement('tr');
-                row.className = 'table-row';
-                
-                const timeCell = document.createElement('td');
-                timeCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-300';
-                timeCell.textContent = result.time.toFixed(2);
-                
-                const typeCell = document.createElement('td');
-                typeCell.className = 'px-6 py-4 whitespace-nowrap text-sm';
-                const typeBadge = document.createElement('span');
-                typeBadge.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${result.type === 'note' ? 'bg-amber-900 text-amber-200' : 'bg-emerald-900 text-emerald-200'}`;
-                typeBadge.textContent = result.type.charAt(0).toUpperCase() + result.type.slice(1);
-                typeCell.appendChild(typeBadge);
-                
-                const labelCell = document.createElement('td');
-                labelCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-300';
-                labelCell.textContent = result.label;
-                
-                const confidenceCell = document.createElement('td');
-                confidenceCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-300';
-                confidenceCell.textContent = (result.confidence * 100).toFixed(1) + '%';
-                
-                row.appendChild(timeCell);
-                row.appendChild(typeCell);
-                row.appendChild(labelCell);
-                row.appendChild(confidenceCell);
-                
-                tableBody.appendChild(row);
-            });
+            const timeCell = document.createElement('td');
+            timeCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-300';
+            timeCell.textContent = result.time.toFixed(2);
             
-            // Show results container
-            document.getElementById('resultsContainer').classList.remove('hidden');
-        }
+            const typeCell = document.createElement('td');
+            typeCell.className = 'px-6 py-4 whitespace-nowrap text-sm';
+            const typeBadge = document.createElement('span');
+            typeBadge.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${result.type === 'note' ? 'bg-amber-900 text-amber-200' : 'bg-emerald-900 text-emerald-200'}`;
+            typeBadge.textContent = result.type.charAt(0).toUpperCase() + result.type.slice(1);
+            typeCell.appendChild(typeBadge);
+            
+            const labelCell = document.createElement('td');
+            labelCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-300';
+            labelCell.textContent = result.label;
+            
+            const confidenceCell = document.createElement('td');
+            confidenceCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-300';
+            confidenceCell.textContent = (result.confidence * 100).toFixed(1) + '%';
+            
+            row.appendChild(timeCell);
+            row.appendChild(typeCell);
+            row.appendChild(labelCell);
+            row.appendChild(confidenceCell);
+            
+            tableBody.appendChild(row);
+        });
+        
+        // TAMBAHAN: Buat notasi musik dari hasil
+        createMusicNotation(results);
+        
+        // Show results container
+        document.getElementById('resultsContainer').classList.remove('hidden');
+    }
+
         
         // Function to show custom loading message based on file size
         function showLoadingMessage(fileSize) {
