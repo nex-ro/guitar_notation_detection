@@ -5,17 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-
-    <title>Live Music Note Detection</title>
+    <title>Nada Gitar - Live</title>
+    <link rel="icon" type="image/png" href="/static/logo_gitar.png">
     <style>
         body {
-            background-color: #121212;
+            /* background-color: #121212; */
             color: #e0e0e0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        header,.darkBG{
-        background-color: #121212;
-    }
+        
         h1, h2 {
             color: #e0e0e0;
         }
@@ -28,7 +26,7 @@
         .controls {
             margin-bottom: 20px;
             padding: 15px;
-            background-color: #1e1e1e;
+            background-color: #333333;
             border-radius: 8px;
             display: flex;
             align-items: center;
@@ -79,7 +77,7 @@
             width: 100%;
             height: 100%;
             position: relative;
-            background-color: #1e1e1e;
+            background-color: #333333;
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
@@ -211,7 +209,9 @@
             text-decoration: none;
             transition: all 0.3s ease;
         }
-        
+        .highlight-accent {
+            color: #fbbf24; /* amber-400 */
+        }
         .navigation a:hover {
             color: #81C784;
             text-decoration: underline;
@@ -230,7 +230,7 @@
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-900">
     <header class=" text-white px-6 py-4 flex justify-between items-center">
         <!-- Logo dan Judul -->
         <div class="flex items-center space-x-2">
@@ -244,14 +244,14 @@
     
         <!-- Navigasi -->
         <nav class="flex space-x-6 text-white">
-            <a href="/" class="text-yellow-400 hover:text-yellow-500 hover:underline transition duration-200 ease-in-out px-2 py-1 rounded">Home</a>
+            <a href="/" class=" hover:text-yellow-500 hover:underline transition duration-200 ease-in-out px-2 py-1 rounded">Home</a>
             <a href="/uploud" class="hover:text-yellow-500 hover:underline transition duration-200 ease-in-out px-2 py-1 rounded">Uploud Suara</a>
-            <a href="/live" class="hover:text-yellow-500 hover:underline transition duration-200 ease-in-out px-2 py-1 rounded">Periksa Nada live</a>
+            <a href="/live" class="text-yellow-400 hover:text-yellow-500 hover:underline transition duration-200 ease-in-out px-2 py-1 rounded">Periksa Nada live</a>
         </nav>
     </header>
     
     <div class="container">
-        <h1 class="text-2xl text-center font-bold mt-6 mb-6">Live Music Note Detection</h1>
+        <h1 class="text-center mb-4 text-3xl font-bold">Live Music Note <span class="highlight-accent">Detection</span></h1>
         
         <div class="controls">
             <button id="startBtn"><i class="fas fa-microphone"></i> Start Recording</button>
@@ -498,7 +498,7 @@ updateDetectionHistory();
         // Initialize tuner display with a centered needle
         tunerNeedle.style.transform = 'translateX(-50%) rotate(0deg)';
     </script>
-     <footer class="darkBG text-white py-12 w-full">
+     <footer class=" text-white py-12 w-full">
         <div class="container mx-auto px-6 foots">
           <div class="flex flex-col md:flex-row justify-between">
             <div class="mb-6 md:mb-0">

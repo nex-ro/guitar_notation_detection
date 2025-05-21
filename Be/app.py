@@ -69,7 +69,6 @@ def load_and_segment_audio(file_path, segment_duration=0.50, sr=44100, auto_segm
         # Original fixed-length segmentation
         audio_segments = librosa.util.frame(audio_data, frame_length=int(segment_duration*sr), hop_length=int(segment_duration*sr)).T
     
-    # Calculate segment timestamps
     if auto_segment:
         segment_times = onset_times[:-1]
         # Handle split segments
@@ -95,6 +94,7 @@ def segments_to_mel_spectrograms(segments, sr=44100, target_shape=(128, 128)):
         mel_spectrogram = resize(np.expand_dims(mel_spectrogram, axis=-1), target_shape)
         mel_spectrograms.append(mel_spectrogram)
     return np.array(mel_spectrograms)
+
 
 @app.on_event("startup")
 def load_model():

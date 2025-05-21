@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Note & Chord Analyzer</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>Nada Gitar - Check nada Audio</title>
+    <link rel="icon" type="image/png" href="/static/logo_gitar.png">    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         body {
@@ -63,6 +63,13 @@
             border-color: #3b82f6; /* blue-500 */
             color: #bfdbfe; /* blue-200 */
         }
+        footer{
+            padding: 20px;
+        }
+        .foots{
+            padding-top: 20px;
+            border-top: 2px solid white;
+        }
     </style>
 </head>
 <body>
@@ -81,7 +88,7 @@
         <!-- Navigasi -->
         <nav class="flex space-x-6">
             <a href="/" class="hover:text-amber-400 hover:underline transition duration-200 ease-in-out px-2 py-1 rounded">Home</a>
-            <a href="/uploud" class="text-amber-400 hover:text-amber-300 hover:underline transition duration-200 ease-in-out px-2 py-1 rounded">Uploud Suara</a>
+            <a href="/uploud" class="text-yellow-400 hover:text-amber-300 hover:underline transition duration-200 ease-in-out px-2 py-1 rounded">Uploud Suara</a>
             <a href="/live" class="hover:text-amber-400 hover:underline transition duration-200 ease-in-out px-2 py-1 rounded">Periksa Nada live</a>
         </nav>
     </header>
@@ -90,7 +97,7 @@
         <h1 class="text-center mb-4 text-3xl font-bold">Audio Note & Chord <span class="highlight-accent">Analyzer</span></h1>
         
         <div class="upload-container rounded-lg p-6 shadow-md mb-6">
-            <h3 class="mb-4 text-xl font-semibold">Upload Audio File</h3>
+            <h3 class="mb-4 text-xl font-semibold">Uploud Audio File (Mp3/Wave/OGG) </h3>
             <form id="uploadForm" enctype="multipart/form-data">
                 <div class="mb-4 relative">
                     <div id="dropArea" class="border-2 border-dashed border-gray-600 rounded-lg py-16 px-6 text-center cursor-pointer transition duration-300 bg-gray-700 hover:border-amber-400 hover:bg-gray-600">
@@ -143,11 +150,11 @@
             
             <div class="flex mb-4 space-x-4">
                 <div class="flex items-center">
-                    <span class="inline-block w-4 h-4 bg-blue-600 rounded mr-2"></span> 
+                    <span class="inline-block w-4 h-4 bg-amber-500 rounded mr-2"></span> 
                     <span>Notes</span>
                 </div>
                 <div class="flex items-center">
-                    <span class="inline-block w-4 h-4 bg-green-600 rounded mr-2"></span> 
+                    <span class="inline-block w-4 h-4 bg-emerald-500 rounded mr-2"></span> 
                     <span>Chords</span>
                 </div>
             </div>
@@ -168,7 +175,67 @@
             </div>
         </div>
     </div>
-
+    <footer class=" text-white py-12 w-full">
+        <div class="container mx-auto px-6 foots">
+          <div class="flex flex-col md:flex-row justify-between">
+            <div class="mb-6 md:mb-0">
+              <div class="flex items-center space-x-2 mb-4">
+                <img src="/static/logo_gitar.png" alt="Logo" class="h-8 w-8" />
+                <span class="text-lg font-medium">
+                  Nada Gitar <span class="text-yellow-500">Akustik</span>
+                </span>
+              </div>
+              <p class="text-gray-400 max-w-sm">Aplikasi pemeriksa nada gitar terbaik untuk memastikan instrumen Anda selalu terdengar sempurna.</p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-8">
+              <div>
+                <h3 class="text-lg font-bold mb-4">Navigasi</h3>
+                <ul class="space-y-2">
+                  <li><a href="/" class="text-gray-400 hover:text-yellow-400 transition duration-300 " >Home</a></li>
+                  <li><a href="/uploud" class="text-gray-400 hover:text-yellow-400 transition duration-300">Upload Suara</a></li>
+                  <li><a href="/live" class="text-gray-400 hover:text-yellow-400 transition duration-300">Periksa Nada Live</a></li>
+                </ul>
+              </div>
+              
+              <div>
+                <h3 class="text-lg font-bold mb-4">Bantuan</h3>
+                <ul class="space-y-2">
+                  <li><a href="#" class="text-gray-400 hover:text-yellow-400 transition duration-300">FAQ</a></li>
+                  <li><a href="#" class="text-gray-400 hover:text-yellow-400 transition duration-300">Panduan Pengguna</a></li>
+                  <li><a href="#" class="text-gray-400 hover:text-yellow-400 transition duration-300">Kontak</a></li>
+                </ul>
+              </div>
+              
+              <div>
+                <h3 class="text-lg font-bold mb-4">Ikuti Kami</h3>
+                <div class="flex space-x-4">
+                  <a href="#" class="text-gray-400 hover:text-yellow-400 transition duration-300">
+                    <i class="fab fa-facebook-f text-xl"></i>
+                  </a>
+                  <a href="#" class="text-gray-400 hover:text-yellow-400 transition duration-300">
+                    <i class="fab fa-instagram text-xl"></i>
+                  </a>
+                  <a href="#" class="text-gray-400 hover:text-yellow-400 transition duration-300">
+                    <i class="fab fa-youtube text-xl"></i>
+                  </a>
+                  <a href="#" class="text-gray-400 hover:text-yellow-400 transition duration-300">
+                    <i class="fab fa-twitter text-xl"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p class="text-gray-500">© 2025 Nada Gitar Akustik. Seluruh hak cipta dilindungi.</p>
+            <div class="flex space-x-6 mt-4 md:mt-0">
+              <a href="#" class="text-gray-500 hover:text-yellow-400 transition duration-300">Kebijakan Privasi</a>
+              <a href="#" class="text-gray-500 hover:text-yellow-400 transition duration-300">Syarat dan Ketentuan</a>
+            </div>
+          </div>
+        </div>
+      </footer>
     <script>
         // Global variable for chart
         let resultsChart = null;
